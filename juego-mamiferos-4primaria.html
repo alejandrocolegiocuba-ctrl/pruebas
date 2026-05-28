@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Juego: Mamíferos (4º Primaria)</title>
+    <style>
+      :root {
+        --fondo: #f4fbff;
+        --tarjeta: #ffffff;
+        --principal: #2a7de1;
+        --acierto: #1f9d55;
+        --error: #d64545;
+        --texto: #223;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        font-family: Arial, Helvetica, sans-serif;
+        background: linear-gradient(135deg, #dff2ff, var(--fondo));
+        color: var(--texto);
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 16px;
+      }
+
+      .juego {
+        width: 100%;
+        max-width: 720px;
+        background: var(--tarjeta);
+        border-radius: 16px;
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
+        overflow: hidden;
+      }
+
+      .cabecera {
+        background: var(--principal);
+        color: white;
+        padding: 20px;
+      }
+
+      .cabecera h1 {
+        margin: 0 0 8px;
+        font-size: 1.45rem;
+      }
+
+      .cabecera p {
+        margin: 0;
+        opacity: 0.95;
+      }
+
+      .contenido {
+        padding: 20px;
+      }
+
+      .estado {
+        display: flex;
+        justify-content: space-between;
+        font-weight: bold;
+        margin-bottom: 12px;
+      }
+
+      .pregunta {
+        font-size: 1.18rem;
+        margin: 16px 0;
+        line-height: 1.35;
+      }
+
+      .opciones {
+        display: grid;
+        gap: 10px;
+      }
+
+      .opcion {
+        border: 2px solid #d7e6f8;
+        background: #f8fbff;
+        border-radius: 10px;
+        padding: 12px;
+        font-size: 1rem;
+        text-align: left;
+        cursor: pointer;
+        transition: transform 0.06s ease, border-color 0.2s ease;
+      }
+
+      .opcion:hover:enabled {
+        transform: translateY(-1px);
+        border-color: var(--principal);
+      }
+
+      .opcion.correcta {
+        border-color: var(--acierto);
+        background: #e6f8ee;
+      }
+
+      .opcion.incorrecta {
+        border-color: var(--error);
+        background: #ffeaea;
+      }
+
+      .mensaje {
+        min-height: 28px;
+        margin-top: 12px;
+        font-weight: bold;
+      }
+
+      .controles {
+        margin-top: 16px;
+        display: flex;
+        gap: 10px;
+      }
+
+      .btn {
+        border: none;
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+
+      .btn-principal {
+        background: var(--principal);
+        color: white;
+      }
+
+      .btn-secundario {
+        background: #eaf3ff;
+        color: #1a4f95;
+      }
+
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="juego">
+      <header class="cabecera">
+        <h1>🐾 Juego de Mamíferos (4º de Primaria)</h1>
+        <p>Responde las preguntas y comprueba cuánto sabes.</p>
+      </header>
+
+      <section class="contenido">
+        <div class="estado">
+          <span id="contador">Pregunta 1 de 8</span>
+          <span id="puntos">Puntos: 0</span>
+        </div>
+
+        <p id="pregunta" class="pregunta"></p>
+        <div id="opciones" class="opciones"></div>
+        <p id="mensaje" class="mensaje" aria-live="polite"></p>
+
+        <div class="controles">
+          <button id="siguienteBtn" class="btn btn-principal" disabled>Siguiente</button>
+          <button id="reiniciarBtn" class="btn btn-secundario">Reiniciar</button>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const preguntas = [
+        {
+          texto: "¿Qué característica tienen todos los mamíferos?",
+          opciones: ["Ponen huevos", "Tienen pelo o pelaje", "Viven siempre en el agua"],
+          correcta: 1
+        },
+        {
+          texto: "¿Cómo alimentan las mamás mamíferas a sus crías?",
+          opciones: ["Con leche", "Con hojas", "Con insectos"],
+          correcta: 0
+        },
+        {
+          texto: "¿Cuál de estos animales es un mamífero?",
+          opciones: ["Tortuga", "Delfín", "Águila"],
+          correcta: 1
+        },
+        {
+          texto: "¿Dónde respiran los mamíferos?",
+          opciones: ["Por pulmones", "Por branquias", "Por la piel"],
+          correcta: 0
+        },
+        {
+          texto: "¿Cuál de estos mamíferos puede volar?",
+          opciones: ["Murciélago", "Pingüino", "Avestruz"],
+          correcta: 0
+        },
+        {
+          texto: "¿Qué mamífero vive normalmente en granjas y da lana?",
+          opciones: ["Oveja", "Gallina", "Pato"],
+          correcta: 0
+        },
+        {
+          texto: "¿Cuál es el mamífero más grande del mundo?",
+          opciones: ["Elefante", "Tiburón ballena", "Ballena azul"],
+          correcta: 2
+        },
+        {
+          texto: "Los mamíferos son animales...",
+          opciones: ["De sangre caliente", "De sangre fría", "Sin columna vertebral"],
+          correcta: 0
+        }
+      ];
+
+      const preguntaEl = document.getElementById("pregunta");
+      const opcionesEl = document.getElementById("opciones");
+      const mensajeEl = document.getElementById("mensaje");
+      const contadorEl = document.getElementById("contador");
+      const puntosEl = document.getElementById("puntos");
+      const siguienteBtn = document.getElementById("siguienteBtn");
+      const reiniciarBtn = document.getElementById("reiniciarBtn");
+
+      let indice = 0;
+      let puntos = 0;
+      let respondida = false;
+
+      function cargarPregunta() {
+        const actual = preguntas[indice];
+        contadorEl.textContent = `Pregunta ${indice + 1} de ${preguntas.length}`;
+        preguntaEl.textContent = actual.texto;
+        opcionesEl.innerHTML = "";
+        mensajeEl.textContent = "";
+        siguienteBtn.disabled = true;
+        respondida = false;
+
+        actual.opciones.forEach((opcion, i) => {
+          const btn = document.createElement("button");
+          btn.className = "opcion";
+          btn.textContent = opcion;
+          btn.addEventListener("click", () => comprobarRespuesta(i, btn));
+          opcionesEl.appendChild(btn);
+        });
+      }
+
+      function comprobarRespuesta(seleccionada, botonSeleccionado) {
+        if (respondida) return;
+        respondida = true;
+
+        const actual = preguntas[indice];
+        const botones = opcionesEl.querySelectorAll(".opcion");
+
+        botones.forEach((b, i) => {
+          b.disabled = true;
+          if (i === actual.correcta) {
+            b.classList.add("correcta");
+          }
+        });
+
+        if (seleccionada === actual.correcta) {
+          puntos++;
+          puntosEl.textContent = `Puntos: ${puntos}`;
+          mensajeEl.textContent = "✅ ¡Muy bien! Respuesta correcta.";
+          mensajeEl.style.color = "var(--acierto)";
+        } else {
+          botonSeleccionado.classList.add("incorrecta");
+          mensajeEl.textContent = "❌ Casi. La opción correcta está marcada en verde.";
+          mensajeEl.style.color = "var(--error)";
+        }
+
+        siguienteBtn.disabled = false;
+      }
+
+      function siguiente() {
+        indice++;
+        if (indice < preguntas.length) {
+          cargarPregunta();
+          return;
+        }
+
+        preguntaEl.textContent = `Juego terminado. Tu puntuación final es ${puntos} de ${preguntas.length}.`;
+        opcionesEl.innerHTML = "";
+        mensajeEl.textContent = puntos >= 6
+          ? "🎉 ¡Excelente trabajo! Sabes mucho sobre mamíferos."
+          : "📚 Buen intento. ¡Puedes reiniciar y mejorar tu marca!";
+        mensajeEl.style.color = "#1a4f95";
+        contadorEl.textContent = "Fin del juego";
+        siguienteBtn.disabled = true;
+      }
+
+      function reiniciar() {
+        indice = 0;
+        puntos = 0;
+        puntosEl.textContent = "Puntos: 0";
+        cargarPregunta();
+      }
+
+      siguienteBtn.addEventListener("click", siguiente);
+      reiniciarBtn.addEventListener("click", reiniciar);
+
+      cargarPregunta();
+    </script>
+  </body>
+</html>
